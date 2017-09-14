@@ -15,7 +15,7 @@ import java.util.concurrent.Callable;
  * @auth: steven.zhou
  * @date: 2017/09/14
  */
-public class Worker implements Callable<String> {
+public class Worker implements Callable<CheckResult> {
 
     private static final Logger LOG = Logger.getLogger(Worker.class);
 
@@ -30,9 +30,10 @@ public class Worker implements Callable<String> {
     }
 
     @Override
-    public String call() throws Exception {
+    public CheckResult call() throws Exception {
 
-        String rtn = null;
+        CheckResult checkResult = new CheckResult();
+        checkResult.nodepath = this.basepath + "/" + this.addr;
         HttpGet request = new HttpGet(this.probeURL);
 
         try {
@@ -40,17 +41,18 @@ public class Worker implements Callable<String> {
             HttpResponse response = HttpClients.createDefault().execute(request);
             if (response.getStatusLine().getStatusCode() == 200) {
                 LOG.debug(this.probeURL + " is running");
+                checkResult.isHealth = true;
             } else {
                 String content = EntityUtils.toString(response.getEntity());
                 LOG.info("probe failure: " + this.probeURL + " " + content.substring(0, 50));
-                rtn = this.basepath + "/" + this.addr;
+                checkResult.isHealth = false;
             }
 
         } catch (Exception e) {
 
         }
 
-        return rtn;
+        return checkResult;
     }
 
 }
